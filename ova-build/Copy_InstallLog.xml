@@ -1,0 +1,20 @@
+<project name="CopyLog" default="CopyLogTask" basedir=".">
+    <description>
+      This script will get the installer log from the build vm if build fails to install the SMGR installer.
+    </description>
+  <!-- set global properties for this build -->
+ <property file="int_template/var.properties"/>
+
+ <target name="CopyLogTask">
+    <!-- Copy the logs  -->
+
+	<scp file="${SMGR_HOST_USER}:${SMGR_HOST_PASSWD}@${SMGR_HOST}:/var/autotest/install.log" todir="." trust="true"/>
+<!--
+	<sshexec host="${SMGR_HOST}" username="${SMGR_HOST_USER}" password="${SMGR_HOST_PASSWD}" trust="true" failonerror="true" command='cat ${SMGR_INSTALLER_PATH}/installer_relno.txt ' outputproperty="smgr_version">   
+	</sshexec>
+-->
+
+ </target>
+
+ 
+</project>

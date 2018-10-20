@@ -1,0 +1,15 @@
+http://10.129.154.158/SMGR/Adopter_Integration/R8.1_Sprint_2/cs1000-smgr-iu-4.0.zip
+http://10.129.154.158/SMGR/Adopter_Integration/R8.1_Sprint_2/IPTCM-8.1.0.0.2-8587.zip
+http://10.129.154.158/SMGR/Adopter_Integration/R8.1_Sprint_2/MESSAGING-8.1.0.0.2-2857.zip
+http://10.129.154.158/SMGR/Adopter_Integration/R8.1_Sprint_2/INVENTORY-8.1.0.0.2-2519.zip
+http://10.129.154.158/SMGR/Adopter_Integration/R8.1_Sprint_2/MGMTREPORTS-8.1.0.0.2-686.zip
+http://10.129.154.158/SMGR/Adopter_Integration/R8.1_Sprint_2/iptcm-khoj-8.1.0.0.2-452.zip
+http://10.129.154.158/SMGR/Adopter_Integration/R8.1_Sprint_2/Officelinx-8.1.0.2-31970.zip
+http://10.129.154.158/SMGR/Adopter_Integration/R8.1_Sprint_2/SUM-8.1.0.0.2-4740.zip
+http://10.129.154.158/SMGR/Adopter_Integration/R8.1_Sprint_2/avmgmt-installer-8.1.0.0.182002.zip
+http://10.129.154.158/SMGR/Adopter_Integration/R8.1_Sprint_2/psng-smgr-iu-8.0.1-20180511.162955-30.zip
+http://10.129.154.158/SMGR/VMware_Templates/Base_Template/R8.1_Sprint_2/VESMGRInstallZip.zip
+http://10.129.154.158/SMGR/Adopter_Integration/R8.1_Sprint_2/ce-em-installer-3.5.0.0.94011.zip
+http://10.129.154.158/SMGR/Adopter_Integration/R8.1_Sprint_2/mediaserver-8.0.6.0-20180119-a91b4a2.zip
+http://10.129.154.158/SMGR/Adopter_Integration/R8.1_Sprint_2/Equinox-iu-8.0.0.0.5-7399.zip
+http://10.129.154.158/SMGR/Adopter_Integration/R8.1_Sprint_2/conferencing-aif-8.0.0.0.1-bundle.zip

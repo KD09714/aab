@@ -1,0 +1,76 @@
+<project name="Copy Mgmt Installer/Scripts on Integration machine" default="copyExecuteIUScripts" basedir=".">
+    <description>
+      This script will copy Adopter and VMware specific IU SMGR Integration Server and install IU.
+    </description>
+  <!-- set global properties for this build -->
+ <property file="int_template/var.properties"/>
+<taskdef resource="net/sf/antcontrib/antcontrib.properties">
+  <classpath>
+    <pathelement location="../lib/ant-contrib-1.0b3.jar"/>
+  </classpath>
+</taskdef>
+ <target name="copyExecuteIUScripts">
+    <echo message="${INT_TEMPLATE_OVA_NAME}${line.separator}" file=".template_build.prop" />
+    <!-- Create ${SMGR_INSTALLER_PATH} Directory  -->
+    <sshexec host="${SMGR_HOST}" username="${SMGR_HOST_USER}" password="${SMGR_HOST_PASSWD}" trust="true" failonerror="true" command='mkdir -p ${ADOPTER_INSTALLER_PATH}' >   
+	</sshexec>
+
+	<!-- Copy SMGRInstallation.sh script to SMGR Integration machine -->
+	<scp todir="${SMGR_HOST_USER}:${SMGR_HOST_PASSWD}@${SMGR_HOST}:${ADOPTER_INSTALLER_PATH}" trust="true">
+	    <fileset dir=".">
+		  <include name="IUDownload.sh"/>
+		  <include name="IUInstallation.sh"/>
+		  <include name="fixSpirit.sh"/>
+	    </fileset>
+	</scp>
+
+	<scp todir="${SMGR_HOST_USER}:${SMGR_HOST_PASSWD}@${SMGR_HOST}:${ADOPTER_INSTALLER_PATH}" trust="true">
+	    <fileset dir="./int_template">
+		  <include name="IULinks.txt"/>
+		  <include name="IUSequenceTracker.txt"/>
+		  <include name="var.properties"/>
+	    </fileset>
+	</scp>
+	
+	<if>
+		 <equals arg1="${INSTALL_VMWARE_INT_PATCH}" arg2="true" />
+			 <then>
+			   <echo message="INSTALL_VMWARE_INT_PATCH=true" />
+			    <sshexec host="${SMGR_HOST}" username="${SMGR_HOST_USER}" password="${SMGR_HOST_PASSWD}" trust="true" failonerror="true" command='mkdir -p ${ADOPTER_INSTALLER_PATH}/vmware_int_patch' >   
+				</sshexec>
+				<scp todir="${SMGR_HOST_USER}:${SMGR_HOST_PASSWD}@${SMGR_HOST}:${ADOPTER_INSTALLER_PATH}/vmware_int_patch" trust="true">
+				<fileset dir=".">
+				<include name="System_Manager_R6.3*.*"/>
+				</fileset>
+				</scp>
+			 </then>
+	 <else>
+	   <echo message="INSTALL_VMWARE_INT_PATCH=false" />
+	 </else>
+	</if>
+	
+<!-- Execute IUDownload.sh script which will download IUs on SMGR Integration machine-->
+<sshexec host="${SMGR_HOST}" username="${SMGR_HOST_USER}" password="${SMGR_HOST_PASSWD}" trust="true" failonerror="true" command='cd ${ADOPTER_INSTALLER_PATH} ; dos2unix *.sh ; chmod +x *.sh ; sh IUDownload.sh ${ADOPTER_INSTALLER_PATH}' >
+</sshexec>
+<sshexec host="${SMGR_HOST}" username="${SMGR_HOST_USER}" password="${SMGR_HOST_PASSWD}" trust="true" failonerror="true" command='cd ${ADOPTER_INSTALLER_PATH} ; dos2unix *.sh ; chmod +x *.sh ; sh IUInstallation.sh ${ADOPTER_INSTALLER_PATH}' >
+</sshexec>
+
+<if>
+		 <equals arg1="${INSTALL_VMWARE_INT_PATCH}" arg2="true" />
+			 <then>
+			   <sshexec host="${SMGR_HOST}" username="${SMGR_HOST_USER}" password="${SMGR_HOST_PASSWD}" trust="true" failonerror="true" command='. /etc/profile ; cd ${ADOPTER_INSTALLER_PATH}/vmware_int_patch ;  chmod +x *.bin ; sh *.bin' >
+			   </sshexec>
+			</then>
+	 <else>
+	   <echo message="No VMWare INT Patch to Install" />
+	 </else>
+</if>
+
+<scp todir="${SMGR_HOST_USER}:${SMGR_HOST_PASSWD}@${SMGR_HOST}:/opt/vsp/VMWrapper" trust="true">
+	    <fileset dir=".">
+		  <include name=".template_build.prop"/>
+		</fileset>
+</scp>
+
+</target>
+</project>

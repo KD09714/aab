@@ -1,0 +1,16 @@
+<project name="PreTemplate" default="runPretemplateCreationScript" basedir=".">
+    
+  <!-- set global properties for this build -->
+ <property file="int_template/var.properties"/>
+
+<target name="runPretemplateCreationScript">
+ <sshexec host="${SMGR_HOST}" username="${SMGR_HOST_USER}" password="${SMGR_HOST_PASSWD}" trust="true" failonerror="true" command='cp -f /var/autotest/Cleanup.sh /home/Cleanup.sh ; sh /home/Cleanup.sh ${SMGR_INSTALLER_PATH} "System Manager = ${SMGR_VERSION}" ${PLATFORM}' >
+ </sshexec>
+</target>
+
+ <target name="Clean_Cleanup.sh" depends="runPretemplateCreationScript">
+ <sshexec host="${SMGR_HOST}" username="${SMGR_HOST_USER}" password="${SMGR_HOST_PASSWD}" trust="true" failonerror="true" command='rm -rf /home/Cleanup.sh'  >
+</sshexec>
+</target>
+
+</project>

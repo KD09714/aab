@@ -1,0 +1,45 @@
+<project name="MyProject" default="replaceToken" basedir=".">
+    <description>
+        For Copying the Template.ovf file to /opt/Avaya/vsp/common_services/ovf_file in the SMGR machine
+    </description>
+ 
+  <property file="int_template/var.properties"/>
+ 
+<target name="replaceToken">
+<copy file="Template.ovf" tofile="ovf_file" />
+   <replace  file="ovf_file"
+    propertyFile="ovf.properties">
+   <replacefilter 
+    token="@VirtualSystem.Name@" 
+    property="VirtualSystem.Name"/>
+  </replace>
+  <replace file="ovf_file" token="@BUILD_NUMBER@" value="${BUILD_NUMBER}"/>
+  <replace file="ovf_file" token="@Disk1.Size@" value="0"/>
+  <replace file="ovf_file" token="@Disk2.Size@" value="0"/>
+  <replace file="ovf_file" token="@Disk3.Size@" value="0"/>
+  <replace file="ovf_file" token="@Disk4.Size@" value="0"/>
+  <replace file="ovf_file" token="@PatchISO.Size@" value="0"/>
+  <replace  file="ovf_file"
+     propertyFile="int_template/var.properties">
+     <replacefilter 
+      token="@SUPPORTED_ESX@" 
+      property="SUPPORTED_ESX"/>
+  </replace>
+  <replace  file="ovf_file"
+     propertyFile="int_template/var.properties">
+     <replacefilter 
+      token="@smgr_version@" 
+      property="INSTALL_REL_NO"/>
+  </replace>
+ 
+	<!-- Copy ovf_file to /opt/Avaya/vsp/common_services/ovf_file in SMGR Integration machine -->
+	<!-- [165323-240] (System Rqmt) <Testable-y> Applications will provide a copy of the OVF file or compatible data file on the VM hard disk -->
+	<scp todir="${SMGR_HOST_USER}:${SMGR_HOST_PASSWD}@${SMGR_HOST}:/opt/Avaya/vsp/common_services/" trust="true">
+	    <fileset dir=".">
+		  <include name="ovf_file"/>
+	    </fileset>
+	</scp>
+	<sshexec host="${SMGR_HOST}" username="${SMGR_HOST_USER}" password="${SMGR_HOST_PASSWD}" trust="true" failonerror="true" command='chown admin:admin /opt/Avaya/vsp/common_services/ovf_file' >
+	</sshexec> 
+</target>
+</project>

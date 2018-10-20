@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="jiic" default="createCopyISO" basedir=".">
+
+<property name="kernelversion" value="2.6.20"/>
+
+<taskdef name="iso"
+	classname="de.tu_darmstadt.informatik.rbg.hatlak.iso9660.ISOTask"
+	classpath="../lib/sabre.jar:../lib/iso9660.jar"
+/>
+ <property file="int_template/var.properties"/>
+<target name="createCopyISO">
+
+			<sshexec host="${ESX_IP}" username="${ESX_USER}" password="${ESX_PASS}" trust="true" failonerror="true" command='cd `esxcli storage filesystem list | grep VMFS-5 | awk "{print $1}"`; rm -f ${BASE_TEMP_ISO_NAME}' >   
+	        </sshexec>
+
+			 <copy file="int_template/var.properties" tofile="var.properties"/>
+			<iso destfile="${BASE_TEMP_ISO_NAME}" basedir="." name="Minimal"
+	     	includes="var.properties"/> 
+
+			<scp todir="${ESX_USER}:${ESX_PASS}@${ESX_IP}:/tmp" trust="true">
+				<fileset dir=".">
+				  <include name="${BASE_TEMP_ISO_NAME}"/>
+				</fileset>
+		    </scp>
+			
+			<sshexec host="${ESX_IP}" username="${ESX_USER}" password="${ESX_PASS}" trust="true" failonerror="true" command='cd `esxcli storage filesystem list | grep VMFS-5 | awk "{print $1}"`; mv -f /tmp/${BASE_TEMP_ISO_NAME} .' >   
+	        </sshexec>			
+</target>
+
+</project>

@@ -1,0 +1,16 @@
+#    Adopter Name________Installer________   Script 
+CS1000*cs1000-smgr-iu-4.0.zip*cs1000Install.sh
+IPTCM_CM*IPTCM-8.1.0.0.2-8587.zip*IPTCM-8.1.0.0.2-8587.noarch.rpm
+IPTCM_REPORTS*MGMTREPORTS-8.1.0.0.2-686.zip*MGMTREPORTS-8.1.0.0.2-686.noarch.rpm
+IPTCM_KHOJ*iptcm-khoj-8.1.0.0.2-452.zip*iptcm-khoj-8.1.0.0.2-452.noarch.rpm
+IPTCM_MSG*MESSAGING-8.1.0.0.2-2857.zip*MESSAGING-8.1.0.0.2-2857.noarch.rpm
+IPTCM_INV*INVENTORY-8.1.0.0.2-2519.zip*INVENTORY-8.1.0.0.2-2519.noarch.rpm
+IPTCM_SUM*SUM-8.1.0.0.2-4740.zip*SUM-8.1.0.0.2-4740.noarch.rpm
+SESSION_MANAGER*avmgmt-installer-8.1.0.0.182002.zip*install.sh
+CONFERENCING*conferencing-aif-8.0.0.0.1-bundle.zip*conferencing/runInstaller.sh
+PRESENCE_SERVICES*psng-smgr-iu-8.0.1-20180511.162955-30.zip*install.sh
+CE*ce-em-installer-3.5.0.0.94011.zip*install.sh
+VESMGRInstallZip*VESMGRInstallZip.zip*VESMGR_IU_Installation.sh
+MEDIASERVER*mediaserver-8.0.6.0-20180119-a91b4a2.zip*scripts/amsInstall.sh
+OFFICELINX*Officelinx-8.1.0.2-31970.zip*scripts/officelinxInstall.sh
+Equinox*Equinox-iu-8.0.0.0.5-7399.zip*installEquinox.sh

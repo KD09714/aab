@@ -1,0 +1,389 @@
+<!-- Change History -->
+<!--********************************************************************************************-->
+<!--   	29-SEP-2018	Dharmendra Kumar	Initial Coding to Prepare OVA for SMGR Release  -->
+<!--    30-SEP-2018    	Dharemndra Kumar	Adding delete VM target			        -->
+<!--    01-OCT-2018 	Dharmendra Kumar	Replacing tar target with exec tar to maintain  -->
+<!--						the sequence of file in output ova              -->
+<!--    19-OCT-2018	Dharmendra Kumar	Change the folder Structure for Artifact.       -->
+<!--********************************************************************************************-->
+
+<project name="ovabuild" basedir="." default="all">
+	<taskdef resource="net/sf/antcontrib/antcontrib.properties">
+  	<classpath>
+    		<pathelement location="../lib/ant-contrib-1.0b3.jar"/>
+  	</classpath>
+	</taskdef>
+
+	<taskdef name="scp" classname="org.apache.tools.ant.taskdefs.optional.ssh.Scp">
+	<classpath>
+		<pathelement location="../lib/jsch-0.1.54.jar" />
+	</classpath>
+	</taskdef>  
+
+	<property file=".build.number" />
+	<property file="int_template/build.properties" />
+	<property file="int_template/var.properties" />
+
+        <property name="source.ova.name" value="${OS_TEMPLATE_NAME}" />
+        <property name="target.ipaddress" value="${SMGR_HOST}" />
+        <property name="target.subnet.address" value="${SMGR_HOST_NETMASK}" />
+        <property name="target.hostname" value="${OS_TEMPLATE_NAME}" />
+        <property name="target.gateway" value="${SMGR_HOST_GATEWAY}" />
+
+        <if>
+        <equals arg1="${INSTALL_REL_NO}" arg2="@smgr_version@" />
+        <then>
+                <property name="target.ovf.name" value="${source.ova.name}" />
+        </then>
+        </if>
+        <property name="target.ovf.name" value="${INT_TEMPLATE_OVA_NAME}" />
+
+	<scriptdef language="javascript" name="upper">
+    		<attribute name="string" /> 
+    		<attribute name="to" />
+
+    		project.setProperty( attributes.get( "to" ),
+                         attributes.get( "string" ).toUpperCase() );
+	</scriptdef>
+
+ <target name="get.base.ova">
+	<echo message="Copying Base OVA ..." />
+	<exec executable="wget" failonerror="true" >
+		<arg value="${OS_TEMPLATE_PATH}" />
+	</exec>
+ </target>
+
+ <target name="deploy.ova" depends="get.base.ova">
+	<echo message="Deploying ${source.ova.name}.ova to ${VCENTER_IP} ..." />
+	<copy file="int_template/vcsa.json_template" tofile="./vcsa.json_${source.ova.name}" overwrite="true" />
+	<replace file="vcsa.json_${source.ova.name}" >
+		<replacefilter token="@@source.ova.name@@" value="${source.ova.name}" />
+		<replacefilter token="@@subnet.name@@" value="${subnet.name}" />
+		<replacefilter token="@@target.ipaddress@@" value="${target.ipaddress}" />
+		<replacefilter token="@@target.subnet.address@@" value="${target.subnet.address}" />
+		<replacefilter token="@@target.hostname@@" value="${target.hostname}" />
+		<replacefilter token="@@target.gateway@@" value="${target.gateway}" />
+	</replace>
+
+        <replace file="int_template/var.properties" >
+                <replacefilter token="BUILD_NUM=" value="BUILD_NUM=${BUILD_NUMBER}" />
+        </replace>
+	
+	<exec executable="govc" failonerror="true" >
+		<arg value="import.ova" />
+		<arg value="-u=${VCENTER_USER}:${VCENTER_PASS}@${VCENTER_IP}" />
+		<arg value="-ds=${target.datastore}" />
+		<arg value="-k=true" />
+		<arg value="-folder=${target.folder}" />
+		<arg value="-options=vcsa.json_${source.ova.name}" />
+		<arg value="${source.ova.name}.ova" />
+	</exec>
+	<delete file="${source.ova.name}.ova" />
+ </target>
+
+ <target name="configure.prop" if="PLATFORM">
+	<upper string="${PLATFORM}" to="uc.PLATFORM" />
+	<echo message="PLATFORM=${PLATFORM}" file="int_template/var.properties" append="true" />
+	<replace file="int_template/var.properties" >
+		<replacefilter token="SUPPORTED_ESX=e65" value="SUPPORTED_ESX=${uc.PLATFORM}" />
+		<replacefilter token="es_rhel_74_64_9" value="${OS_TEMPLATE_NAME}" />
+		<replacefilter token="SMGR_HOST=10.129.184.72" value="SMGR_HOST=${SMGR_HOST}" />
+	</replace>
+	<echo message="uc.PLATFORM=${uc.PLATFORM}${line.separator}" file=".build.number" append="true" />
+ </target>
+
+ <target name="poweron.vm" >
+	<echo message="Powering On VM : ${source.ova.name}" />
+	<exec executable="govc" failonerror="true">
+		<arg value="vm.power" />
+		<arg value="-on" />
+		<arg value="-u=${VCENTER_USER}:${VCENTER_PASS}@${VCENTER_IP}" />
+		<arg value="-k=true" />
+		<arg value="${source.ova.name}" />
+	</exec>
+	<sleep seconds="60" />
+ </target>
+
+ <target name="poweroff.vm" >
+	<echo message="Powering Off VM : ${source.ova.name}" />
+        <exec executable="govc" failonerror="true">
+                <arg value="vm.power" />
+                <arg value="-off" />
+                <arg value="-u=${VCENTER_USER}:${VCENTER_PASS}@${VCENTER_IP}" />
+                <arg value="-k=true" />
+		<arg value="${source.ova.name}" />
+        </exec>
+ </target>
+
+ <target name="export.ovf" >
+	<echo message="Exporting VM to OVF : ${target.ovf.name}" />
+	<exec executable="govc" failonerror="true">
+		<arg value="export.ovf" />
+		<arg value="-vm=${source.ova.name}" />
+		<arg value="-u=${VCENTER_USER}:${VCENTER_PASS}@${VCENTER_IP}" />
+		<arg value="-k=true" />
+		<arg value="-sha=1" />
+		<arg value="-name=${target.ovf.name}" />
+		<arg value="." />
+	</exec>
+	<sleep seconds="60" />
+ </target>
+
+ <target name="build.ova">
+	<echo message="Build OVA For OVF : ${target.ovf.name}" />
+	<property name="patch.iso.file" value="SMGR-AutoInstall-Patch.iso" />
+	<move file="${target.ovf.name}/${target.ovf.name}-disk-0.vmdk" tofile="${target.ovf.name}-disk1.vmdk" />
+	<move file="${target.ovf.name}/${target.ovf.name}-disk-1.vmdk" tofile="${target.ovf.name}-disk2.vmdk" />
+	<move file="${target.ovf.name}/${target.ovf.name}-disk-2.vmdk" tofile="${target.ovf.name}-disk3.vmdk" />
+	<move file="${target.ovf.name}/${target.ovf.name}-disk-3.vmdk" tofile="${target.ovf.name}-disk4.vmdk" />
+	
+	<length file="${target.ovf.name}-disk1.vmdk" property="disk1.size" />
+	<length file="${target.ovf.name}-disk2.vmdk" property="disk2.size" />
+	<length file="${target.ovf.name}-disk3.vmdk" property="disk3.size" />
+	<length file="${target.ovf.name}-disk4.vmdk" property="disk4.size" />
+	<length file="${patch.iso.file}" property="patch.iso.size" />
+
+	<echo message="Disk1.Size=${disk1.size}${line.separator}" file="ovf.properties" append="true" />
+	<echo message="Disk2.Size=${disk2.size}${line.separator}" file="ovf.properties" append="true" />
+	<echo message="Disk3.Size=${disk3.size}${line.separator}" file="ovf.properties" append="true" />
+	<echo message="Disk4.Size=${disk4.size}${line.separator}" file="ovf.properties" append="true" />
+	<echo message="PatchISO.Size=${patch.iso.size}${line.separator}" file="ovf.properties" append="true" />
+
+	<ant antfile="ConfigureOVA.xml" />
+	<move file="Template.ovf" tofile="${target.ovf.name}.ovf" />
+	
+	<checksum file="${target.ovf.name}.ovf" algorithm="SHA-1" property="ovf.sha1" />
+	<checksum file="${target.ovf.name}-disk1.vmdk" algorithm="SHA-1" property="vmdk1.sha1" />
+	<checksum file="${target.ovf.name}-disk2.vmdk" algorithm="SHA-1" property="vmdk2.sha1" />
+	<checksum file="${target.ovf.name}-disk3.vmdk" algorithm="SHA-1" property="vmdk3.sha1" />
+	<checksum file="${target.ovf.name}-disk4.vmdk" algorithm="SHA-1" property="vmdk4.sha1" />
+	<checksum file="${patch.iso.file}" algorithm="SHA-1" property="patch.iso.sha1" />
+
+	<echo message="SHA1(${target.ovf.name}.ovf)= ${ovf.sha1}${line.separator}" file="${target.ovf.name}.mf" />
+	<echo message="SHA1(${target.ovf.name}-disk1.vmdk)= ${vmdk1.sha1}${line.separator}" file="${target.ovf.name}.mf" append="true" />
+	<echo message="SHA1(${target.ovf.name}-disk2.vmdk)= ${vmdk2.sha1}${line.separator}" file="${target.ovf.name}.mf" append="true" />
+	<echo message="SHA1(${target.ovf.name}-disk3.vmdk)= ${vmdk3.sha1}${line.separator}" file="${target.ovf.name}.mf" append="true" />
+	<echo message="SHA1(${target.ovf.name}-disk4.vmdk)= ${vmdk4.sha1}${line.separator}" file="${target.ovf.name}.mf" append="true" />
+	<echo message="SHA1(${patch.iso.file})= ${patch.iso.sha1}${line.separator}" file="${target.ovf.name}.mf" append="true" />
+
+	<delete file="${target.ovf.name}.ova" />
+        <exec executable="tar" failonerror="true" >
+                <arg value="cvf" />
+                <arg value="${target.ovf.name}.ova" />
+                <arg value="${target.ovf.name}.ovf" />
+                <arg value="${target.ovf.name}.mf" />
+                <arg value="${target.ovf.name}-disk1.vmdk" />
+                <arg value="${target.ovf.name}-disk2.vmdk" />
+                <arg value="${target.ovf.name}-disk3.vmdk" />
+                <arg value="${target.ovf.name}-disk4.vmdk" />
+                <arg value="${patch.iso.file}" />
+        </exec>
+
+	<checksum file="${target.ovf.name}.ova" algorithm="SHA-1" property="ova.sha1" />
+	<checksum file="${target.ovf.name}.ova" format="MD5SUM" property="ova.md5" />
+	<echo message="${ova.sha1} ${target.ovf.name}.ova${line.separator}" file="${target.ovf.name}.sha1sum.txt" />
+	<echo message="${ova.md5} ${target.ovf.name}.ova${line.separator}" file="${target.ovf.name}.md5sum.txt" />
+
+	<delete dir="published-ova/${target.ovf.name}" />
+	<move todir="published-ova/${target.ovf.name}" >
+		<fileset dir=".">
+			<include name="${target.ovf.name}.ova" />
+			<include name="${target.ovf.name}.sha1sum.txt" />
+			<include name="${target.ovf.name}.md5sum.txt" />
+		</fileset>
+	</move>
+	<copy todir="published-ova/${target.ovf.name}" file="${target.ovf.name}.ovf" />
+ </target>
+
+ <target name="build.dev.ova">
+	<replace file="${target.ovf.name}.ovf" >
+                <replacefilter token="vmx-11" value="vmx-09" />
+	</replace>
+	<property name="patch.iso.file" value="SMGR-AutoInstall-Patch.iso" />
+
+        <checksum file="${target.ovf.name}.ovf" algorithm="SHA-1" property="ovf.dev.sha1" />
+        <checksum file="${target.ovf.name}-disk1.vmdk" algorithm="SHA-1" property="vmdk1.dev.sha1" />
+        <checksum file="${target.ovf.name}-disk2.vmdk" algorithm="SHA-1" property="vmdk2.dev.sha1" />
+        <checksum file="${target.ovf.name}-disk3.vmdk" algorithm="SHA-1" property="vmdk3.dev.sha1" />
+        <checksum file="${target.ovf.name}-disk4.vmdk" algorithm="SHA-1" property="vmdk4.dev.sha1" />
+        <checksum file="${patch.iso.file}" algorithm="SHA-1" property="patch.iso.dev.sha1" />
+
+        <echo message="SHA1(${target.ovf.name}.ovf)= ${ovf.dev.sha1}${line.separator}" file="${target.ovf.name}.mf" />
+        <echo message="SHA1(${target.ovf.name}-disk1.vmdk)= ${vmdk1.dev.sha1}${line.separator}" file="${target.ovf.name}.mf" append="true" />
+        <echo message="SHA1(${target.ovf.name}-disk2.vmdk)= ${vmdk2.dev.sha1}${line.separator}" file="${target.ovf.name}.mf" append="true" />
+        <echo message="SHA1(${target.ovf.name}-disk3.vmdk)= ${vmdk3.dev.sha1}${line.separator}" file="${target.ovf.name}.mf" append="true" />
+        <echo message="SHA1(${target.ovf.name}-disk4.vmdk)= ${vmdk4.dev.sha1}${line.separator}" file="${target.ovf.name}.mf" append="true" />
+        <echo message="SHA1(${patch.iso.file})= ${patch.iso.dev.sha1}${line.separator}" file="${target.ovf.name}.mf" append="true" />
+
+        <delete file="${target.ovf.name}-DEV.ova" />
+	<exec executable="tar" failonerror="true" >
+		<arg value="cvf" />
+		<arg value="${target.ovf.name}-DEV.ova" />
+		<arg value="${target.ovf.name}.ovf" />
+		<arg value="${target.ovf.name}.mf" />
+		<arg value="${target.ovf.name}-disk1.vmdk" />
+		<arg value="${target.ovf.name}-disk2.vmdk" />
+		<arg value="${target.ovf.name}-disk3.vmdk" />
+		<arg value="${target.ovf.name}-disk4.vmdk" />
+		<arg value="${patch.iso.file}" />
+	</exec>
+        
+        <checksum file="${target.ovf.name}-DEV.ova" algorithm="SHA-1" property="ova.dev.sha1" />
+        <checksum file="${target.ovf.name}-DEV.ova" format="MD5SUM" property="ova.dev.md5" />
+        <echo message="${ova.dev.sha1} ${target.ovf.name}-DEV.ova${line.separator}" file="${target.ovf.name}-DEV.sha1sum.txt" />
+        <echo message="${ova.dev.md5} ${target.ovf.name}-DEV.ova${line.separator}" file="${target.ovf.name}-DEV.md5sum.txt" />
+	
+	<delete dir="published-ova/${target.ovf.name}-DEV" />
+        <move todir="published-ova/${target.ovf.name}-DEV" >
+                <fileset dir=".">
+                        <include name="${target.ovf.name}-DEV.ova" />
+                        <include name="${target.ovf.name}-DEV.sha1sum.txt" />
+                        <include name="${target.ovf.name}-DEV.md5sum.txt" />
+                </fileset>
+	</move>
+        <copy todir="published-ova/${target.ovf.name}-DEV" file="${target.ovf.name}.ovf" />
+ </target>
+
+ <target name="build.kvm.ova">
+        <echo message="Build OVA For OVF : ${target.ovf.name}" />
+        <move file="${target.ovf.name}/${target.ovf.name}-disk-0.vmdk" tofile="${target.ovf.name}-disk1.vmdk" />
+
+        <exec executable="qemu-img" failonerror="true">
+                <arg value="convert" />
+                <arg value="-O" />
+                <arg value="qcow2" />
+                <arg value="${target.ovf.name}-disk1.vmdk" />
+                <arg value="${target.ovf.name}-disk1.qcow2" />
+        </exec>
+
+        <length file="${target.ovf.name}-disk1.qcow2" property="disk1.size" />
+        <echo message="Disk1.Size=${disk1.size}${line.separator}" file="ovf.properties" append="true" />
+
+	<delete file="Template_kvm.ovf" />
+	<copy tofile="Template_kvm.ovf" file="Template.ovf">
+		<filterchain>
+			<linecontainsregexp negate="true">
+				<regexp pattern="@Disk2.Size@" />
+			</linecontainsregexp>
+			<linecontainsregexp negate="true">
+                                <regexp pattern="@Disk3.Size@" />
+                        </linecontainsregexp>
+			<linecontainsregexp negate="true">
+                                <regexp pattern="@Disk4.Size@" />
+                        </linecontainsregexp>
+			<linecontainsregexp negate="true">
+                                <regexp pattern="@PatchISO.Size@" />
+                        </linecontainsregexp>
+			<linecontainsregexp negate="true">
+                                <regexp pattern="ovf:diskId=&quot;vmdisk2&quot;" />
+                        </linecontainsregexp>
+			<linecontainsregexp negate="true">
+                                <regexp pattern="ovf:diskId=&quot;vmdisk3&quot;" />
+                        </linecontainsregexp>
+			<linecontainsregexp negate="true">
+                                <regexp pattern="ovf:diskId=&quot;vmdisk4&quot;" />
+                        </linecontainsregexp>
+		</filterchain>
+	</copy>
+
+	<replace file="Template_kvm.ovf" propertyFile="ovf.properties">
+		<replacefilter token="@VirtualSystem.Name@" property="VirtualSystem.Name" />
+		<replacefilter token="@Disk1.Size@" property="Disk1.Size" />
+		<replacefilter token="@BUILD_NUMBER@" value="${BUILD_NUMBER}" />
+		<replacefilter token="@SUPPORTED_ESX@" value="${SUPPORTED_ESX}" />
+		<replacefilter token="@smgr_version@" value="${INSTALL_REL_NO}" />
+		<replacefilter token="disk1.vmdk" value="disk1.qcow2" />
+	</replace>
+
+        <copy file="Template_kvm.ovf" tofile="${target.ovf.name}.ovf" />
+
+        <checksum file="${target.ovf.name}.ovf" algorithm="SHA-256" property="ovf.sha256" />
+	<checksum file="README.txt" algorithm="SHA-256" property="readme.sha256" />
+	<checksum file="SMGR-installer.sh" algorithm="SHA-256" property="sh.256" />
+	<checksum file="SMGR-installer.py" algorithm="SHA-256" property="py.256" />
+        <checksum file="${target.ovf.name}-disk1.qcow2" algorithm="SHA-1" property="qcow2.sha256" />
+
+        <echo message="SHA256(${target.ovf.name}.ovf)= ${ovf.sha256}${line.separator}" file="${target.ovf.name}.mf" />
+        <echo message="SHA256(README.txt)= ${readme.sha256}${line.separator}" file="${target.ovf.name}.mf" append="true" />
+        <echo message="SHA256(SMGR-installer.sh)= ${sh.256}${line.separator}" file="${target.ovf.name}.mf" append="true" />
+        <echo message="SHA256(SMGR-installer.py)= ${py.256}${line.separator}" file="${target.ovf.name}.mf" append="true" />
+        <echo message="SHA256(${target.ovf.name}-disk1.qcow2)= ${qcow2.sha256}${line.separator}" file="${target.ovf.name}.mf" append="true" />
+
+        <delete file="${target.ovf.name}.ova" />
+        <exec executable="tar" failonerror="true" >
+                <arg value="cvf" />
+                <arg value="${target.ovf.name}.ova" />
+                <arg value="${target.ovf.name}.ovf" />
+                <arg value="${target.ovf.name}.mf" />
+                <arg value="README.txt" />
+                <arg value="SMGR-installer.sh" />
+                <arg value="SMGR-installer.py" />
+                <arg value="${target.ovf.name}-disk1.qcow2" />
+        </exec>
+
+        <checksum file="${target.ovf.name}.ova" algorithm="SHA-1" property="ova.sha1" />
+        <checksum file="${target.ovf.name}.ova" format="MD5SUM" property="ova.md5" />
+        <echo message="${ova.sha1} ${target.ovf.name}.ova${line.separator}" file="${target.ovf.name}.sha1sum.txt" />
+        <echo message="${ova.md5} ${target.ovf.name}.ova${line.separator}" file="${target.ovf.name}.md5sum.txt" />
+
+        <delete dir="published-ova/${target.ovf.name}" />
+        <move todir="published-ova/${target.ovf.name}" >
+                <fileset dir=".">
+                        <include name="${target.ovf.name}.ova" />
+                        <include name="${target.ovf.name}.sha1sum.txt" />
+                        <include name="${target.ovf.name}.md5sum.txt" />
+                </fileset>
+        </move>
+        <copy todir="published-ova/${target.ovf.name}" file="${target.ovf.name}.ovf" />
+ </target>
+
+ <target name="publish.ova">
+	<property name="uc.PLATFORM" value="VMware" />
+	<echo message="Publishing output files..." />
+      	<sshexec host="${INT_SERVER_HOST}" trust="true" verbose="false"
+       		username="${INT_SERVER_HOST_USER}"
+       		password="${INT_SERVER_HOST_PASSWD}"
+       	command="mkdir -p ${INT_SERVER_PATH}/${RELEASE_SPRINT}/${uc.PLATFORM}/PROFILE2/Build-${BUILD_NUMBER}/${uc.PLATFORM}_Template" />
+
+    	<scp todir="${INT_SERVER_HOST_USER}@${INT_SERVER_HOST}:${INT_SERVER_PATH}/${RELEASE_SPRINT}/${uc.PLATFORM}/PROFILE2/Build-${BUILD_NUMBER}/${uc.PLATFORM}_Template" 
+		preserveLastModified="true" password="${INT_SERVER_HOST_PASSWD}" trust="yes" verbose="false">
+       		<fileset dir="published-ova/${target.ovf.name}" />
+       	</scp>
+
+	<delete>
+		<fileset dir="." >
+			<include name="*.vmdk" />
+			<include name="*.qcow2" />
+			<include name="*.mf" />
+			<include name="*.ovf" />
+		</fileset>
+	</delete>
+ </target>
+
+ <target name="publish.dev.ova">
+	<property name="uc.PLATFORM" value="VMware" />
+        <sshexec host="${INT_SERVER_HOST}" trust="true" verbose="false"
+                username="${INT_SERVER_HOST_USER}"
+                password="${INT_SERVER_HOST_PASSWD}"
+        command="mkdir -p ${INT_SERVER_PATH}/${RELEASE_SPRINT}/${uc.PLATFORM}/PROFILE2/Build-${BUILD_NUMBER}/${uc.PLATFORM}_Template-DEV" />
+
+        <scp todir="${INT_SERVER_HOST_USER}@${INT_SERVER_HOST}:${INT_SERVER_PATH}/${RELEASE_SPRINT}/${uc.PLATFORM}/PROFILE2/Build-${BUILD_NUMBER}/${uc.PLATFORM}_Template-DEV"
+                preserveLastModified="true" password="${INT_SERVER_HOST_PASSWD}" trust="yes" verbose="false">
+                <fileset dir="published-ova/${target.ovf.name}-DEV" />
+        </scp>
+ </target>
+
+ <target name="delete.vm" >
+ 	<echo message="Deleting VM : ${source.ova.name}" />
+        <exec executable="govc" failonerror="true" >
+                <arg value="vm.destroy" />
+                <arg value="-u=${VCENTER_USER}:${VCENTER_PASS}@${VCENTER_IP}" />
+                <arg value="-k=true" />
+                <arg value="${source.ova.name}" />
+        </exec>
+ </target>
+
+ <target name="all" >
+	<echo message="OVA Build for SMGR." />
+ </target>
+</project>

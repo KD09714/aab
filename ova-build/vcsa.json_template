@@ -1,0 +1,32 @@
+{
+    "IPAllocationPolicy": "dhcpPolicy",
+    "IPProtocol": "IPv4",
+    "InjectOvfEnv": false,
+    "Name": "@@source.ova.name@@",
+    "NetworkMapping": [
+        {
+            "Name": "Public",
+            "Network": "@@subnet.name@@"
+        }
+    ],
+    "PowerOn": true,
+    "PropertyMapping": [
+        {
+            "Key": "ip0",
+            "Value": "@@target.ipaddress@@"
+        },
+        {
+            "Key": "netmask0",
+            "Value": "@@target.subnet.address@@"
+        },
+        {
+            "Key": "gateway",
+            "Value": "@@target.gateway@@"
+        },
+        {
+            "Key": "hostname",
+            "Value": "@@target.hostname@@"
+        }
+    ],
+    "WaitForIP": false
+}

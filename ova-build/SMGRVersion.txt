@@ -1,0 +1,9 @@
+18-Oct-2018 : SMGR Installer - 8.1.0.0.232077  VESMGR Installer - 32033
+17-Oct-2018 : SMGR Installer - 8.1.0.0.232068  VESMGR Installer - 32033
+15-Oct-2018 : SMGR Installer - 8.1.0.0.232052  VESMGR Installer - 32033
+14-Oct-2018 : SMGR Installer - 8.1.0.0.232046  VESMGR Installer - 32033
+10-Oct-2018 : SMGR Installer - 8.1.0.0.232033  VESMGR Installer - 32033
+09-Oct-2018 : SMGR Installer - 8.1.0.0.232020  VESMGR Installer - 31966
+08-Oct-2018 : SMGR Installer - 8.1.0.0.232002  VESMGR Installer - 31966
+08-Oct-2018 : SMGR Installer - 8.1.0.0.231987  VESMGR Installer - 31966
+03-Oct-2018 : SMGR Installer - 8.1.0.0.131959  VESMGR Installer - 31959

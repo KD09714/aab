@@ -1,0 +1,59 @@
+<project name="MyProject" default="replaceToken" basedir=".">
+    <description>
+        For Editing Ova file
+    </description>
+ 
+  
+<target name="replaceToken">
+   <replace  file="Template.ovf"
+    propertyFile="ovf.properties">
+   <replacefilter 
+    token="@VirtualSystem.Name@" 
+    property="VirtualSystem.Name"/>
+  </replace>
+  <replace  file="Template.ovf"
+    propertyFile="ovf.properties">
+   <replacefilter 
+    token="@Disk1.Size@" 
+    property="Disk1.Size"/>
+  </replace>
+  <replace  file="Template.ovf"
+    propertyFile="ovf.properties">
+   <replacefilter 
+    token="@Disk2.Size@" 
+    property="Disk2.Size"/>
+  </replace>
+  <replace  file="Template.ovf"
+    propertyFile="ovf.properties">
+   <replacefilter 
+    token="@Disk3.Size@" 
+    property="Disk3.Size"/>
+  </replace>
+  <replace  file="Template.ovf"
+     propertyFile="ovf.properties">
+     <replacefilter 
+      token="@Disk4.Size@" 
+      property="Disk4.Size"/>
+  </replace>
+  <replace file="Template.ovf" token="@BUILD_NUMBER@" value="${BUILD_NUMBER}"/>
+  <replace  file="Template.ovf"
+     propertyFile="int_template/var.properties">
+     <replacefilter 
+      token="@SUPPORTED_ESX@" 
+      property="SUPPORTED_ESX"/>
+  </replace>
+  <replace  file="Template.ovf"
+     propertyFile="int_template/var.properties">
+     <replacefilter 
+      token="@smgr_version@" 
+      property="INSTALL_REL_NO"/>
+  </replace>
+  <replace  file="Template.ovf"
+     propertyFile="ovf.properties">
+     <replacefilter 
+      token="@PatchISO.Size@" 
+      property="PatchISO.Size"/>
+  </replace>
+  
+</target>
+</project>
